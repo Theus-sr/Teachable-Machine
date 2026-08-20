@@ -1,0 +1,55 @@
+CONFIDENCE_THRESHOLD = 0.80
+REQUIRED_FRAMES = 3
+
+player_status = "PAUSADO"
+last_class = None
+frame_count = 0
+
+
+def trigger_action(class_name):
+    global player_status
+
+    if class_name == "PLAY":
+        player_status = "REPRODUZINDO"
+        print("Player: REPRODUZINDO")
+
+    elif class_name == "PAUSE":
+        player_status = "PAUSADO"
+        print("Player: PAUSADO")
+
+    elif class_name == "NEUTRO":
+        print("Nenhuma ação executada.")
+
+
+def process_prediction(class_name, confidence):
+    global last_class, frame_count
+
+    if confidence < CONFIDENCE_THRESHOLD:
+        last_class = None
+        frame_count = 0
+        return
+
+    if class_name == last_class:
+        frame_count += 1
+    else:
+        last_class = class_name
+        frame_count = 1
+
+    if frame_count >= REQUIRED_FRAMES:
+        trigger_action(class_name)
+        frame_count = 0
+
+
+def main():
+    print("Controle de Player por Gestos")
+    print("Dupla: Alberto Costa e Matheus Albuquerque")
+    print("Confiança mínima: 80%")
+    print()
+    print("Classes:")
+    print("PLAY   -> inicia o player")
+    print("PAUSE  -> pausa o player")
+    print("NEUTRO -> nenhuma ação")
+
+
+if __name__ == "__main__":
+    main()
