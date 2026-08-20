@@ -1,55 +1,44 @@
-CONFIDENCE_THRESHOLD = 0.80
-REQUIRED_FRAMES = 3
+from keras.models import load_model  # TensorFlow is required for Keras to work
+from PIL import Image, ImageOps  # Install pillow instead of PIL
+import numpy as np
 
-player_status = "PAUSADO"
-last_class = None
-frame_count = 0
+# Disable scientific notation for clarity
+np.set_printoptions(suppress=True)
 
+# Load the model
+model = load_model("keras_Model.h5", compile=False)
 
-def trigger_action(class_name):
-    global player_status
+# Load the labels
+class_names = open("labels.txt", "r").readlines()
 
-    if class_name == "PLAY":
-        player_status = "REPRODUZINDO"
-        print("Player: REPRODUZINDO")
+# Create the array of the right shape to feed into the keras model
+# The 'length' or number of images you can put into the array is
+# determined by the first position in the shape tuple, in this case 1
+data = np.ndarray(shape=(1, 224, 224, 3), dtype=np.float32)
 
-    elif class_name == "PAUSE":
-        player_status = "PAUSADO"
-        print("Player: PAUSADO")
+# Replace this with the path to your image
+image = Image.open("<IMAGE_PATH>").convert("RGB")
 
-    elif class_name == "NEUTRO":
-        print("Nenhuma ação executada.")
+# resizing the image to be at least 224x224 and then cropping from the center
+size = (224, 224)
+image = ImageOps.fit(image, size, Image.Resampling.LANCZOS)
 
+# turn the image into a numpy array
+image_array = np.asarray(image)
 
-def process_prediction(class_name, confidence):
-    global last_class, frame_count
+# Normalize the image
+normalized_image_array = (image_array.astype(np.float32) / 127.5) - 1
 
-    if confidence < CONFIDENCE_THRESHOLD:
-        last_class = None
-        frame_count = 0
-        return
+# Load the image into the array
+data[0] = normalized_image_array
 
-    if class_name == last_class:
-        frame_count += 1
-    else:
-        last_class = class_name
-        frame_count = 1
+# Predicts the model
+prediction = model.predict(data)
+index = np.argmax(prediction)
+class_name = class_names[index]
+confidence_score = prediction[0][index]
 
-    if frame_count >= REQUIRED_FRAMES:
-        trigger_action(class_name)
-        frame_count = 0
+# Print prediction and confidence score
+print("Class:", class_name[2:], end="")
+print("Confidence Score:", confidence_score)
 
-
-def main():
-    print("Controle de Player por Gestos")
-    print("Dupla: Alberto Costa e Matheus Albuquerque")
-    print("Confiança mínima: 80%")
-    print()
-    print("Classes:")
-    print("PLAY   -> inicia o player")
-    print("PAUSE  -> pausa o player")
-    print("NEUTRO -> nenhuma ação")
-
-
-if __name__ == "__main__":
-    main()
